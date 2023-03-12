@@ -1,0 +1,509 @@
+#include <iostream>
+#include <ctime>
+#include <fstream>
+#include <string>
+#include < stdio.h >
+using namespace std;
+
+struct Profile
+{
+	string full_name; // Фамилия Имя Отчество
+	char sex;         // Пол: M/W
+	int group;        // Номер группы
+	int id;           // Номер студента в списке 
+	int grades[8];    // Оценки за экзамены и диф. зачёты
+	string date;
+	float average;
+};
+
+void creatingRecord() {
+	Profile student;
+	cout << "ФИО: ";
+	cin.ignore();
+	getline(cin, student.full_name);
+	cout << "Группа: ";
+	cin >> student.group;
+	cout << "Номер в списке группы: ";
+	cin >> student.id;
+	cout << "Пол (Ж/М): ";
+	cin >> student.sex;
+	for (int i = 0; i < 8; i++)  cin >> student.grades[i];
+
+
+	int temp = 0;
+	for (int i = 0; i < 8; i++) // Так оценка 2 не может стоять в ведомости, идёт проверка
+	{
+		if (student.grades[i] == 2)
+			temp++; // Найдена оценка 2, увеличиваем счётчик
+	}
+	if (temp == 0) // Если двоек не обнаружено
+	{
+		ofstream database; // Создаем поток записи в файл 
+		// Открываем файл student с флагом записи в конец файла с сохранением содержимого файла
+		database.open("students.txt", ios::app);
+		if (!database.is_open()) // Если файл открыть не удалось 
+			cout << '\n' << "Ошибка сохранения!"; // Выдаём соответсвующее сообщение
+		else // Если файл успешно был открыт поочереди записываем всю информацию в файл.
+		{
+			database << student.full_name << '\n';
+			database << student.group << '\n' << student.id << '\n' << student.sex << '\n';
+			for (int i = 0; i < 8; i++)
+				database << student.grades[i] << " ";
+			database << '\n';
+
+			database.close();
+			cout << '\n' << "Профиль сохранен в datebase.\n";
+		}
+	}
+	else // Если у студента есть неуд, информация о нем, не может быть сохранена, т.к. он должен быть отчислен
+		cout << '\n' << "Этот студент должен быть отчислен. Профиль не сохранен в datebase.";
+}
+
+int countStudents()
+{
+	ifstream database("students.txt");
+	if (database.is_open())
+	{
+		int temp = 0;
+		string data;
+		while (!database.eof())
+		{
+			getline(database, data);
+			temp++;
+		}
+		database.close();
+		int n;
+		n = temp / 5;
+		return n;
+	}
+	else return 0;
+}
+
+void showData()
+{
+	ifstream database("students.txt"); // Создаем поток считывания информации из файла и открываем файл student
+	if (!database.is_open()) // Если файл открыть не удалось 
+		cout << "Ошибка открытия файла";
+	else
+	{
+		int temp;
+		temp = countStudents();
+		if (temp == 0)
+			cout << "Файл пуст";
+		else
+		{
+			string data;
+			int t = 0;
+			while (!database.eof())
+			{
+				if (t == 0) {
+					getline(database, data); // Считываем очередную строчку
+					cout << "ФИО: " << data << '\n';    // Выводим строку на экран
+					t += 1;
+
+				}
+				else if (t == 1) {
+					getline(database, data); // Считываем очередную строчку
+					cout << "Группа: " << data << '\n';    // Выводим строку на экран
+					t += 1;
+
+				}
+				else if (t == 2) {
+					getline(database, data); // Считываем очередную строчку
+					cout << "Номер с группе: " << data << '\n';    // Выводим строку на экран
+					t += 1;
+
+				}
+				else if (t == 3) {
+					getline(database, data); // Считываем очередную строчку
+					cout << "Пол (Ж/М): " << data << '\n';    // Выводим строку на экран
+					t += 1;
+
+				}
+				else {
+					getline(database, data);
+					cout << "Оценки: " << data << '\n';    // Выводим строку на экран
+					t = 0;
+
+
+
+				}
+
+
+			}
+		}
+		database.close();
+	}
+}
+
+void showGroup()
+{
+	int n; // Переменная, которая будет содержать информацию о введенном пользователем номере группы
+	cout << "Введите номер группы:" << endl;
+	cin >> n;
+	char litter;
+	ifstream database("students.txt");
+	if (!database.is_open())
+		cout << "Ошибка открытия файла!";
+	else
+	{
+		int size;
+		size = countStudents();
+		if (size == 0)
+			cout << "Datebase пуст." << endl;
+		else
+		{
+			Profile* student = new Profile[size];
+			for (int i = 0; i < size; i++) // Считываем данные всех студентов в массив структур
+			{
+				getline(database, student[i].full_name);
+				database >> student[i].group >> student[i].id >> student[i].sex;
+				for (int j = 0; j < 8; j++)
+					database >> student[i].grades[j];
+				database.get(litter);
+				database.get(litter);
+			}
+			database.close(); // Закрываем файл
+			int temp = 0;
+			for (int i = 0; i < size; i++) // Проходим по всем студентам
+			{
+				if (student[i].group == n) // Фильтруем данные по необходимому признаку
+				{
+					cout << "Номер в списке группы: ";
+					cout << student[i].id << '\n';
+					cout << "ФИО: ";
+					cout << student[i].full_name << '\n';
+					cout << "Пол (Ж/М): ";
+					cout << student[i].sex << '\n';
+					cout << "Оценки за семестр: ";
+					for (int j = 0; j < 8; j++)
+						cout << student[i].grades[j] << " ";
+					cout << "\n\n";
+					temp++;
+				}
+			}
+			if (temp == 0) // Если ни одной записи не найдено 
+				cout << "Записи не найдены" << endl;
+			delete[] student; // Освобождаем динамическую память 
+		}
+	}
+}
+
+void top() {
+	char litter;
+	ifstream database("students.txt");
+	if (!database.is_open())
+		cout << "Ошибка открытия файла!";
+	else
+	{
+		int size, count;
+
+		int k = 0;
+		size = countStudents();
+		if (size == 0)
+			cout << "Datebase пуст." << endl;
+		else
+		{
+			Profile* student = new Profile[size];
+			for (int i = 0; i < size; i++) // Считываем данные всех студентов в массив структур
+			{
+				getline(database, student[i].full_name);
+				database >> student[i].group >> student[i].id >> student[i].sex;
+				for (int j = 0; j < 8; j++) {
+					database >> student[i].grades[j];
+					k += student[i].grades[j];
+				}
+				database.get(litter);
+				database.get(litter);
+				student[i].average = k / 8;
+				k = 0;
+			}
+
+			database.close(); // Закрываем файл
+
+			for (int i = 0; i < size; i++) // Проходим по всем студентам
+			{
+				for (int i = 0; i < size; i++) {
+					for (int j = 0; j < size - i - 1; j++)
+						if (student[j].average < student[j + 1].average)
+							swap(student[j], student[j + 1]);
+				}
+			}
+			for (int i = 0; i < size; i++) // Проходим по всем студентам
+			{
+				count = i + 1;
+				cout << count << '\n';
+				cout << student[i].full_name << '\n';
+			}
+			delete[] student; // Освобождаем динамическую память
+		}
+	}
+}
+
+void morw() {
+	char litter;
+	ifstream database("students.txt");
+	if (!database.is_open())
+		cout << "Ошибка открытия файла!";
+	else
+	{
+		int size, W = 0, M = 0;
+		size = countStudents();
+		if (size == 0)
+			cout << "Datebase пуст." << endl;
+		else
+		{
+			Profile* student = new Profile[size];
+			for (int i = 0; i < size; i++) // Считываем данные всех студентов в массив структур
+			{
+				getline(database, student[i].full_name);
+				database >> student[i].group >> student[i].id >> student[i].sex;
+				for (int j = 0; j < 8; j++) {
+					database >> student[i].grades[j];
+				}
+				database.get(litter);
+				database.get(litter);
+				if (student[i].sex == 'W') {
+					W += 1;
+				}
+				else {
+					M += 1;
+				}
+			}
+
+			database.close(); // Закрываем файл
+			cout << "Сколько WOMEN: " << W << '\n';
+			cout << "Сколько MEN: " << M << '\n';
+			delete[] student; // Освобождаем динамическую память
+		}
+	}
+}
+
+void showIdGroup()
+{
+	int n; // Переменная, которая будет содержать информацию о введенном пользователем номере в списке группы(id)
+	char litter;
+	cout << "Введите номер в списке группы:" << endl;
+	cin >> n;
+	ifstream database("students.txt");
+	if (!database.is_open())
+		cout << "Ошибка открытия файла!";
+	else
+	{
+		int size;
+		size = countStudents();
+		if (size == 0)
+			cout << "Datebase пуст." << endl;
+		else
+		{
+			Profile* student = new Profile[size];
+			for (int i = 0; i < size; i++) // Считываем данные всех студентов в массив структур
+			{
+				getline(database, student[i].full_name);
+				database >> student[i].group >> student[i].id >> student[i].sex;
+				for (int j = 0; j < 8; j++)
+					database >> student[i].grades[j];
+				database.get(litter);
+				database.get(litter);
+			}
+			database.close(); // Закрываем файл
+			int temp = 0;
+			for (int i = 0; i < size; i++) // Проходим по всем студентам
+			{
+				if (student[i].id == n) // Фильтруем данные по необходимому признаку
+				{
+					cout << "Номер группы: ";
+					cout << student[i].group << '\n';
+					cout << "ФИО: ";
+					cout << student[i].full_name << '\n';
+					cout << "Пол (Ж/М): ";
+					cout << student[i].sex << '\n';
+					cout << "Оценки за семестр: ";
+					for (int j = 0; j < 8; j++)
+						cout << student[i].grades[j] << " ";
+					cout << "\n\n";
+					temp++;
+				}
+			}
+			if (temp == 0) // Если ни одной записи не найдено 
+				cout << "Записи не найдены" << endl;
+			delete[] student; // Освобождаем динамическую память 
+		}
+	}
+}
+
+void grades() {
+	char litter;
+	ifstream database("students.txt");
+	if (!database.is_open())
+		cout << "Ошибка открытия файла!";
+	else
+	{
+		int size;
+		size = countStudents();
+		if (size == 0)
+			cout << "Datebase пуст." << endl;
+		else
+		{
+			Profile* student = new Profile[size];
+			for (int i = 0; i < size; i++) // Считываем данные всех студентов в массив структур
+			{
+				getline(database, student[i].full_name);
+				database >> student[i].group >> student[i].id >> student[i].sex;
+				for (int j = 0; j < 8; j++) {
+					database >> student[i].grades[j];
+				}
+				database.get(litter);
+				database.get(litter);
+
+			}
+
+			database.close(); // Закрываем файл
+
+			for (int i = 0; i < size; i++) // Проходим по всем студентам
+			{
+				int three = 0, four = 0, five = 0;
+				int* three1 = &three, * four1 = &four, * five1 = &five;
+				for (int j = 0; j < 8; j++) {
+					if (student[i].grades[j] == 3) {
+						three = 1;
+						break;
+					}
+					else if (student[i].grades[j] == 4)
+						four = 1;
+					else if (student[i].grades[j] == 5)
+						five += 1;
+				}
+
+				if (*three1 == 1) {
+					cout << "Студенты без стипендии: \n";
+					cout << "Номер в списке группы: ";
+					cout << student[i].id << '\n';
+					cout << "ФИО: ";
+					cout << student[i].full_name << '\n';
+					cout << "Пол (Ж/М): ";
+					cout << student[i].sex << '\n';
+					cout << "Оценки за семестр: ";
+					for (int j = 0; j < 8; j++)
+						cout << student[i].grades[j] << " ";
+					cout << "\n\n";
+					continue;
+				}
+				else if (*four1 == 1) {
+					cout << "Студенты, обучающиеся на хорошо/отлично: \n";
+					cout << "Номер в списке группы: ";
+					cout << student[i].id << '\n';
+					cout << "ФИО: ";
+					cout << student[i].full_name << '\n';
+					cout << "Пол (Ж/М): ";
+					cout << student[i].sex << '\n';
+					cout << "Оценки за семестр: ";
+					for (int j = 0; j < 8; j++) {
+						cout << student[i].grades[j] << " ";
+					}
+					cout << "\n\n";
+					continue;
+				}
+				else if (*five1 == 8) {
+					cout << "Студенты, обучающиеся на отлично: \n";
+					cout << "Номер в списке группы: ";
+					cout << student[i].id << '\n';
+					cout << "ФИО: ";
+					cout << student[i].full_name << '\n';
+					cout << "Пол (Ж/М): ";
+					cout << student[i].sex << '\n';
+					cout << "Оценки за семестр: ";
+					for (int j = 0; j < 8; j++) {
+						cout << student[i].grades[j] << " ";
+					}
+					cout << "\n\n";
+					continue;
+				}
+
+			}
+			delete[] student; // Освобождаем динамическую память
+		}
+	}
+}
+
+int main() {
+	int r;
+	setlocale(0, "");
+	while (true) {
+
+		cout << "          Меню\n" <<
+			"1 - Создать новую запись о студенте\n" <<
+			"2 - Внести изменения в уже имеющуюся запись\n" <<
+			"3 - Вывести все данные о студентах\n" <<
+			"4 - Вывести информацию обо всех студентах определенной(введенный пользователем) группы\n" <<
+			"5 - Вывести топ самых успешных студентов с наивысшим по рейтингу средним баллом за прошедшую сессию\n" <<
+			"6 - Вывести количество студентов мужского и женского пола\n" <<
+			"7 - Вывести данные о студентах, которые не получают стипендию; учатся только на «хорошо» и «отлично»; учатся только на «отлично»\n" <<
+			"8 - Вывести данные о студентах, имеющих определенный номер(введенный пользователем) в списке \n" <<
+			"0 - Выйти из программы\n";
+		cout << "Ваш выбор: ";
+		cin >> r;
+		cin.sync();
+		if (r == 0) break;
+		switch (r) {
+		case 1:
+			system("cls");
+			cout << "Создание новой записи о студенте:\n";
+			creatingRecord();
+			system("pause");
+			system("cls");
+			break;
+		case 2:
+			system("cls");
+			cout << "Внесение изменений в уже имеющуюся запись:\n";
+			creatingRecord();
+			system("pause");
+			system("cls");
+			break;
+		case 3:
+			system("cls");
+			cout << "Вывод всех данных о студентах:\n";
+			showData();
+			system("pause");
+			system("cls");
+			break;
+		case 4:
+			system("cls");
+			cout << "Вывод информации обо всех студентах группы N:\n";
+			showGroup();
+			system("pause");
+			system("cls");
+			break;
+		case 5:
+			system("cls");
+			cout << "Вывод топа самых успешных студентов с наивысшим по рейтингу средним баллом за прошедшую сессию:\n";
+			top();
+			system("pause");
+			system("cls");
+			break;
+		case 6:
+			system("cls");
+			cout << "Вывод количества студентов мужского и женского пола:\n";
+			morw();
+			system("pause");
+			system("cls");
+			break;
+		case 7:
+			system("cls");
+			cout << "Вывод данных о студентах, которые не получают стипендию; учатся только на «хорошо» и «отлично»; учатся только на «отлично»:\n";
+			grades();
+			system("pause");
+			system("cls");
+			break;
+		case 8:
+			system("cls");
+			cout << "Вывод данных о студентах, имеющих номер в списке – k:\n";
+			showIdGroup();
+			system("pause");
+			system("cls");
+			break;
+
+		}
+	}
+	return 0;
+}
